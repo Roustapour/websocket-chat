@@ -1,1 +1,135 @@
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 20px; }
+        #chat-box { width: 60%; height: 400px; border: 1px solid #ccc; overflow-y: auto; margin: auto; padding: 10px; background: #f9f9f9; border-radius: 5px; }
+        input { width: 45%; padding: 10px; margin: 5px; }
+        button { padding: 10px; cursor: pointer; margin-left: 5px; }
+        img, audio { max-width: 200px; display: block; margin: 5px auto; border-radius: 5px; }
+        .message { padding: 5px; border-bottom: 1px solid #ddd; text-align: left; }
+        .message strong { color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Live Chat</h1>
+    <label for="username">Username:</label>
+    <input type="text" id="username" placeholder="Enter your name">
+    <br><br>
+    <div id="chat-box"></div>
+    <input type="text" id="message" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+    <br><br>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="uploadImage()">Send Image</button>
+    <br><br>
+    <button id="recordButton">🎤 Start Recording</button>
+    <button id="stopButton" disabled>⏹ Stop Recording</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let mediaRecorder;
+        let audioChunks = [];
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message');
+            const usernameInput = document.getElementById('username');
+            const message = messageInput.value;
+            const username = usernameInput.value || "Anonymous";
+            const timestamp = new Date().toLocaleTimeString();
+
+            if (message.trim() !== '') {
+                socket.emit('chatMessage', { username, message, timestamp });
+                messageInput.value = '';
+            }
+        }
+
+        socket.on('chatMessage', (data) => {
+            const chatBox = document.getElementById('chat-box');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add("message");
+            messageElement.innerHTML = `<strong>${data.username}</strong> <small>(${data.timestamp})</small>: ${data.message}`;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        function uploadImage() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            fetch('/upload/image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                socket.emit('imageUpload', data.imageUrl);
+            });
+        }
+
+        socket.on('imageUpload', (imageUrl) => {
+            const chatBox = document.getElementById('chat-box');
+            const imgElement = document.createElement('img');
+            imgElement.src = imageUrl;
+            chatBox.appendChild(imgElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        document.getElementById("recordButton").addEventListener("click", startRecording);
+        document.getElementById("stopButton").addEventListener("click", stopRecording);
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                audioChunks = [];
+
+                mediaRecorder.addEventListener("dataavailable", event => {
+                    audioChunks.push(event.data);
+                });
+
+                document.getElementById("recordButton").disabled = true;
+                document.getElementById("stopButton").disabled = false;
+            });
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            document.getElementById("recordButton").disabled = false;
+            document.getElementById("stopButton").disabled = true;
+
+            mediaRecorder.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                const formData = new FormData();
+                formData.append("audio", audioBlob);
+
+                fetch("/upload/audio", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    socket.emit("audioUpload", data.audioUrl);
+                });
+            });
+        }
+
+        socket.on("audioUpload", (audioUrl) => {
+            const chatBox = document.getElementById("chat-box");
+            const audioElement = document.createElement("audio");
+            audioElement.src = audioUrl;
+            audioElement.controls = true;
+            chatBox.appendChild(audioElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    </script>
+</body>
+</html>
