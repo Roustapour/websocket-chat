@@ -189,7 +189,8 @@
         <div class="chat-footer">
             <div>
                 <input type="text" id="message" placeholder="Type a message...">
-                <button onclick="sendMessage()">Send</button>
+                <!-- دکمه بدون ویژگی inline onclick -->
+                <button id="sendBtn">Send</button>
             </div>
             <div class="file-section">
                 <input type="file" id="imageInput" accept="image/*">
@@ -201,6 +202,8 @@
             </div>
         </div>
     </div>
+
+    <script src="script.js" defer></script>
 
 </body>
 </html>
