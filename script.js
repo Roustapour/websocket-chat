@@ -1,9 +1,6 @@
-console.log("script.js is loaded!");
-
 document.addEventListener("DOMContentLoaded", function() {
     console.log("DOM fully loaded and parsed");
 
-    // اتصال به سرور WebSocket
     const socket = io("http://localhost:3000");
 
     socket.on("connect", () => {
@@ -78,8 +75,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // بررسی و اتصال دکمه ارسال تصویر فقط در صورتی که وجود داشته باشد
-    const sendImageBtn = document.getElementById("sendImageBtn");
+    // اصلاح بخش مربوط به ارسال تصویر
+    const sendImageBtn = document.querySelector("button[onclick='uploadImage()']");
     if (sendImageBtn) {
         sendImageBtn.addEventListener("click", uploadImage);
     }
