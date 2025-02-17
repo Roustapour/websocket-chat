@@ -68,9 +68,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // اتصال رویداد کلیک به دکمه Send
     document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
-    // ارسال پیام با کلید Enter
+    // ارسال پیام با کلید Enter (بدون ارسال فرم)
     document.getElementById("message").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
+        if (event.key === "Enter" && !event.shiftKey) {  // اضافه کردن خط جدید اگر Shift زده نشده باشد
+            event.preventDefault();  // جلوگیری از ارسال پیام
             sendMessage();
         }
     });
@@ -81,5 +82,3 @@ document.addEventListener("DOMContentLoaded", function() {
         sendImageBtn.addEventListener("click", uploadImage);
     }
 });
-
-

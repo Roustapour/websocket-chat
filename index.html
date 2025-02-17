@@ -136,12 +136,15 @@
             margin-bottom: 5px;
         }
 
-        .chat-footer input {
-            flex: 1;
+        /* استایل جدید برای <textarea> */
+        textarea {
+            width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             outline: none;
+            font-size: 14px;
+            resize: vertical;  /* اجازه تغییر اندازه عمودی */
         }
 
         .chat-footer button {
@@ -170,7 +173,6 @@
             margin: 5px auto;
             border-radius: 5px;
         }
-
     </style>
 </head>
 <body>
@@ -191,7 +193,7 @@
         <div id="chat-box"></div>
         <div class="chat-footer">
             <div>
-                <input type="text" id="message" placeholder="Type a message...">
+                <textarea id="message" placeholder="Type a message..." rows="4"></textarea>
                 <button id="sendBtn">Send</button>
             </div>
             <div class="file-section">
@@ -257,5 +259,3 @@
 
 </body>
 </html>
-
-
