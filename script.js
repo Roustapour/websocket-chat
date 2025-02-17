@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", function() {
         let messageInput = document.getElementById("message");
         let message = messageInput.value.trim();
         if (message !== "") {
-            socket.emit("chatMessage", message);  // ارسال پیام به سرور
+            socket.emit("chatMessage", { message: message });  // ارسال پیام به سرور به صورت شیء با ویژگی 'message'
             displayMessage(message, "sender");      // نمایش پیام در صفحه
             messageInput.value = "";                // پاکسازی ورودی
         }
@@ -32,8 +32,8 @@ document.addEventListener("DOMContentLoaded", function() {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    socket.on("chatMessage", (message) => {
-        displayMessage(message, "receiver");
+    socket.on("chatMessage", (data) => {
+        displayMessage(data.message, "receiver");  // نمایش فقط متن پیام
     });
 
     // اتصال رویداد کلیک به دکمه Send
