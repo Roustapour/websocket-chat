@@ -78,6 +78,9 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // اتصال دکمه ارسال تصویر
-    document.getElementById("sendImageBtn").addEventListener("click", uploadImage);
+    // بررسی و اتصال دکمه ارسال تصویر فقط در صورتی که وجود داشته باشد
+    const sendImageBtn = document.getElementById("sendImageBtn");
+    if (sendImageBtn) {
+        sendImageBtn.addEventListener("click", uploadImage);
+    }
 });
