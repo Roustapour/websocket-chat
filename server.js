@@ -17,8 +17,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type']
 }));
 
-// سرو کردن فایل‌های استاتیک از پوشه public
-app.use(express.static('public'));
+// سرو کردن فایل‌های استاتیک از ریشه پروژه (برای فایل‌های مانند script.js)
+app.use(express.static(path.join(__dirname, '/')));  // پوشه ریشه پروژه
+
+// مسیر برای ارسال فایل index.html به صورت دستی
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));  // ارسال index.html از ریشه پروژه
+});
 
 // Ensure "uploads" folder exists
 if (!fs.existsSync('public/uploads/')) {
