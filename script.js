@@ -7,6 +7,10 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("Connected to WebSocket server");
     });
 
+    // متغیرهای مربوط به ضبط صدا
+    let mediaRecorder;
+    let audioChunks = [];
+
     // تابع ارسال پیام
     function sendMessage() {
         console.log("sendMessage function is called!");
@@ -65,6 +69,11 @@ document.addEventListener("DOMContentLoaded", function() {
         displayMessage(`<img src="${imageUrl}" alt="Uploaded Image" style="max-width: 100%; height: auto;">`, "receiver");
     });
 
+    // دریافت و پخش فایل صوتی
+    socket.on('audioUpload', (audioUrl) => {
+        displayMessage(`<audio controls><source src="${audioUrl}" type="audio/wav"></audio>`, "receiver");
+    });
+
     // اتصال رویداد کلیک به دکمه Send
     document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
@@ -80,5 +89,62 @@ document.addEventListener("DOMContentLoaded", function() {
     const sendImageBtn = document.querySelector("button[onclick='uploadImage()']");
     if (sendImageBtn) {
         sendImageBtn.addEventListener("click", uploadImage);
+    }
+
+    // فعال‌سازی ضبط صدا
+    document.getElementById("recordButton").addEventListener("click", startRecording);
+    document.getElementById("stopButton").addEventListener("click", stopRecording);
+    document.getElementById("sendVoiceBtn").addEventListener("click", sendVoice);
+
+    // شروع ضبط صدا
+    function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then((stream) => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioChunks = [];
+                    window.audioUrl = audioUrl;  // ذخیره URL صوتی برای ارسال به سرور
+                    document.getElementById("sendVoiceBtn").disabled = false;  // فعال‌سازی دکمه ارسال ویس
+                };
+                mediaRecorder.start();
+                document.getElementById("stopButton").disabled = false;  // فعال‌سازی دکمه Stop
+                document.getElementById("recordButton").disabled = true;  // غیرفعال کردن دکمه Start Recording
+            })
+            .catch((err) => {
+                console.error("Error accessing media devices.", err);
+            });
+    }
+
+    // توقف ضبط صدا
+    function stopRecording() {
+        mediaRecorder.stop();
+        document.getElementById("recordButton").disabled = false;  // فعال‌سازی دکمه Start Recording
+        document.getElementById("stopButton").disabled = true;     // غیرفعال کردن دکمه Stop
+    }
+
+    // ارسال ویس
+    function sendVoice() {
+        const audioUrl = window.audioUrl;
+        if (audioUrl) {
+            const formData = new FormData();
+            formData.append("audio", audioUrl);  // ارسال فایل صوتی به سرور
+            
+            fetch('/upload/audio', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                socket.emit('audioUpload', data.audioUrl);  // ارسال URL فایل صوتی به سرور
+            })
+            .catch(error => {
+                console.error('Error uploading audio:', error);
+            });
+        }
     }
 });
