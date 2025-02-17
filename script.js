@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("DOM fully loaded and parsed");
 
     // اتصال به سرور WebSocket
-    const socket = io("ws://localhost:3000");
+    const socket = io("http://localhost:3000");
 
     socket.on("connect", () => {
         console.log("Connected to WebSocket server");

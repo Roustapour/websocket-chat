@@ -17,6 +17,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type']
 }));
 
+// سرو کردن فایل‌های استاتیک از پوشه public
 app.use(express.static('public'));
 
 // Ensure "uploads" folder exists
