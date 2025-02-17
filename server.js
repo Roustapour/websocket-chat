@@ -4,10 +4,18 @@ const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');  // وارد کردن پکیج cors
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+
+// تنظیمات CORS برای اجازه دادن به درخواست‌ها از github.io
+app.use(cors({
+    origin: 'https://roustapour.github.io',  // تغییر این به URL مورد نظر شما
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
 
 app.use(express.static('public'));
 
