@@ -1,6 +1,9 @@
+console.log("script.js is loaded!");
+
 document.addEventListener("DOMContentLoaded", function() {
     console.log("DOM fully loaded and parsed");
 
+    // اتصال به سرور WebSocket
     const socket = io("http://localhost:3000");
 
     socket.on("connect", () => {
@@ -50,7 +53,14 @@ document.addEventListener("DOMContentLoaded", function() {
         let chatBox = document.getElementById("chat-box");
         let messageDiv = document.createElement("div");
         messageDiv.classList.add("message", type);
-        messageDiv.innerHTML = message;  // اگر پیام تصویر است، از innerHTML برای نمایش استفاده کنید
+
+        // بررسی اینکه آیا پیام حاوی لینک تصویر است یا نه
+        if (message.startsWith('<img src="')) {
+            messageDiv.innerHTML = message;  // اگر لینک تصویر باشد، به صورت HTML نمایش داده می‌شود
+        } else {
+            messageDiv.innerText = message;  // اگر پیام متنی باشد، به صورت متن نمایش داده می‌شود
+        }
+
         chatBox.appendChild(messageDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -75,8 +85,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // اصلاح بخش مربوط به ارسال تصویر
-    const sendImageBtn = document.querySelector("button[onclick='uploadImage()']");
+    // بررسی و اتصال دکمه ارسال تصویر فقط در صورتی که وجود داشته باشد
+    const sendImageBtn = document.getElementById("sendImageBtn");
     if (sendImageBtn) {
         sendImageBtn.addEventListener("click", uploadImage);
     }
