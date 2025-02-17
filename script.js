@@ -22,18 +22,50 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // تابع نمایش پیام در چت
+    // تابع ارسال تصویر
+    function uploadImage() {
+        const imageInput = document.getElementById('imageInput');
+        const imageFile = imageInput.files[0];  // گرفتن فایل تصویر از ورودی
+
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            // ارسال فایل تصویر به سرور
+            fetch('/upload/image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Image uploaded successfully:', data);
+                // ارسال URL تصویر به سرور برای نمایش در سایر تب‌ها
+                socket.emit('imageUpload', data.imageUrl);
+            })
+            .catch(error => {
+                console.error('Error uploading image:', error);
+            });
+        }
+    }
+
+    // تابع نمایش پیام یا تصویر در چت
     function displayMessage(message, type) {
         let chatBox = document.getElementById("chat-box");
         let messageDiv = document.createElement("div");
         messageDiv.classList.add("message", type);
-        messageDiv.textContent = message;
+        messageDiv.innerHTML = message;  // اگر پیام تصویر است، از innerHTML برای نمایش استفاده کنید
         chatBox.appendChild(messageDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    // دریافت و نمایش پیام‌های متنی
     socket.on("chatMessage", (data) => {
-        displayMessage(data.message, "receiver");  // نمایش فقط متن پیام
+        displayMessage(data.message, "receiver");
+    });
+
+    // دریافت و نمایش تصاویر آپلود شده
+    socket.on('imageUpload', (imageUrl) => {
+        displayMessage(`<img src="${imageUrl}" alt="Uploaded Image" style="max-width: 100%; height: auto;">`, "receiver");
     });
 
     // اتصال رویداد کلیک به دکمه Send
@@ -45,4 +77,7 @@ document.addEventListener("DOMContentLoaded", function() {
             sendMessage();
         }
     });
+
+    // اتصال دکمه ارسال تصویر
+    document.getElementById("sendImageBtn").addEventListener("click", uploadImage);
 });
