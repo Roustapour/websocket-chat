@@ -4,7 +4,7 @@ const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');  // وارد کردن پکیج cors
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,8 +17,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type']
 }));
 
-// سرو کردن فایل‌های استاتیک از ریشه پروژه (برای فایل‌های مانند script.js)
+// سرو کردن فایل‌های استاتیک از ریشه پروژه
 app.use(express.static(path.join(__dirname, '/')));  // پوشه ریشه پروژه
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); // برای دسترسی به فایل‌های آپلود شده
 
 // مسیر برای ارسال فایل index.html به صورت دستی
 app.get('/', (req, res) => {
@@ -35,7 +36,19 @@ const imageStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, 'public/uploads/'),
     filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
-const uploadImage = multer({ storage: imageStorage });
+
+// محدود کردن نوع فایل‌های آپلود شده به تصویر
+const uploadImage = multer({
+    storage: imageStorage,
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png') {
+            return cb(new Error('Only images are allowed'), false);
+        }
+        cb(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 } // محدودیت اندازه فایل به 5MB
+});
 
 // دریافت URL تصویر و ارسال آن به سایر کاربران
 io.on('connection', (socket) => {
@@ -64,3 +77,5 @@ app.post('/upload/image', uploadImage.single('image'), (req, res) => {
 // Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+

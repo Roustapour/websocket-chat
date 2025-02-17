@@ -192,7 +192,6 @@
         <div class="chat-footer">
             <div>
                 <input type="text" id="message" placeholder="Type a message...">
-                <!-- دکمه بدون ویژگی inline onclick -->
                 <button id="sendBtn">Send</button>
             </div>
             <div class="file-section">
@@ -206,7 +205,57 @@
         </div>
     </div>
 
-    <script src="/script.js" defer></script>
+    <script>
+        const socket = io();
+
+        // دریافت پیام متنی و نمایش آن
+        socket.on('chatMessage', (data) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'receiver');
+            messageElement.innerHTML = `
+                <p>${data.message}</p>
+            `;
+            document.getElementById('chat-box').appendChild(messageElement);
+        });
+
+        // دریافت و نمایش تصویر ارسال شده
+        socket.on('imageUpload', (imageUrl) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'receiver');
+            messageElement.innerHTML = `
+                <img src="${imageUrl}" alt="Image" />
+            `;
+            document.getElementById('chat-box').appendChild(messageElement);
+        });
+
+        // ارسال پیام متنی
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            const message = document.getElementById('message').value;
+            if (message.trim()) {
+                socket.emit('chatMessage', { message });
+                document.getElementById('message').value = ''; // پاک کردن فیلد متن
+            }
+        });
+
+        // ارسال تصویر
+        function uploadImage() {
+            const imageInput = document.getElementById('imageInput');
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            fetch('/upload/image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                socket.emit('imageUpload', data.imageUrl);  // ارسال URL تصویر
+            })
+            .catch(error => console.error('Error uploading image:', error));
+        }
+    </script>
 
 </body>
 </html>
+
+
