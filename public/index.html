@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFlow - Live Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Tahoma, Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .chat-header {
+            background: #2979ff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message.sent {
+            background: #2979ff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.received {
+            background: white;
+            border: 1px solid #e0e0e0;
+            margin-right: auto;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        textarea {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            resize: none;
+            min-height: 50px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2979ff;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2062cc;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .file-label:hover {
+            background: #e0e0e0;
+        }
+
+        img {
+            max-width: 200px;
+            border-radius: 8px;
+            margin: 5px 0;
+        }
+
+        audio {
+            max-width: 100%;
+            margin: 5px 0;
+        }
+
+        .recording-indicator {
+            color: red;
+            font-size: 14px;
+            margin-right: 10px;
+            display: none;
+        }
+
+        .recording .recording-indicator {
+            display: inline;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .recording-indicator {
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            MedFlow گفتگوی آنلاین
+        </div>
+        
+        <div id="chat-box" class="chat-box">
+            <!-- پیام‌ها اینجا نمایش داده می‌شوند -->
+        </div>
+
+        <div class="chat-input-container">
+            <form id="message-form" class="chat-form">
+                <div class="input-group">
+                    <textarea 
+                        id="message-input" 
+                        placeholder="پیام خود را بنویسید..."
+                        rows="2"
+                    ></textarea>
+                    <button type="submit">ارسال</button>
+                </div>
+
+                <div class="file-controls">
+                    <input 
+                        type="file" 
+                        id="file-input" 
+                        class="file-input" 
+                        accept="image/*,.pdf,.doc,.docx"
+                    >
+                    <label for="file-input" class="file-label">
+                        📎 انتخاب فایل
+                    </label>
+
+                    <button 
+                        type="button" 
+                        id="record-button"
+                        class="record-button"
+                    >
+                        🎤 شروع ضبط
+                    </button>
+                    <span class="recording-indicator">در حال ضبط...</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>

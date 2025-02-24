@@ -1,7 +1,7 @@
 {
   "name": "websocket-chat",
   "version": "1.0.0",
-  "description": "",
+  "description": "🚀 **MedFlow Chat** یک چت آنلاین برای مشاوره‌ی پزشکی است که از **WebSocket** برای ارتباط لحظه‌ای استفاده می‌کند.  \r ✅ این پروژه هم برای تست لوکال (`localhost`) و هم برای انتشار در **GitHub Pages** بهینه شده است.",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Roustapour/websocket-chat#readme",
   "dependencies": {
+    "axios": "^1.7.9",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.1",

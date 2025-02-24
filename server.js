@@ -4,111 +4,117 @@ const socketIo = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// تنظیمات CORS برای اجازه دادن به درخواست‌ها از github.io
-app.use(cors({
-    origin: 'https://roustapour.github.io',  // تغییر این به URL مورد نظر شما
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type']
-}));
+// تنظیمات webhook
+const WEBHOOK_URL = 'https://ar1234.app.n8n.cloud/webhook-test/ee129ac7-b3b3-4407-b3f8-0dd38b9acb55'; // آدرس webhook خود را اینجا قرار دهید
 
-// سرو کردن فایل‌های استاتیک از ریشه پروژه
-app.use(express.static(path.join(__dirname, '/')));  // پوشه ریشه پروژه
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'))); // برای دسترسی به فایل‌های آپلود شده
-
-// Ensure "uploads" folder exists
-if (!fs.existsSync('public/uploads/')) {
-    fs.mkdirSync('public/uploads/', { recursive: true });
-}
-
-// پیکربندی Multer برای آپلود تصویر
-const imageStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-
-// محدود کردن نوع فایل‌های آپلود شده به تصویر
-const uploadImage = multer({
-    storage: imageStorage,
-    fileFilter: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        if (ext !== '.jpg' && ext !== '.jpeg' && ext !== '.png') {
-            return cb(new Error('Only images are allowed'), false);
+// تنظیمات ذخیره فایل
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dest = 'public/uploads/';
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
         }
-        cb(null, true);
+        cb(null, dest);
     },
-    limits: { fileSize: 5 * 1024 * 1024 } // محدودیت اندازه فایل به 5MB
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
 });
 
-// پیکربندی Multer برای آپلود صوتی
-const audioStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'public/uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+    }
 });
 
-// محدود کردن نوع فایل‌های آپلود شده به صدا
-const uploadAudio = multer({
-    storage: audioStorage,
-    fileFilter: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        if (ext !== '.wav') {
-            return cb(new Error('Only WAV audio files are allowed'), false);
-        }
-        cb(null, true);
-    },
-    limits: { fileSize: 10 * 1024 * 1024 } // محدودیت اندازه فایل به 10MB
-});
+// ارسال فایل‌های استاتیک
+app.use(express.static('public'));
+app.use('/uploads', express.static('public/uploads'));
 
-// مسیر برای ارسال فایل index.html به صورت دستی
+// مسیر اصلی
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));  // ارسال index.html از ریشه پروژه
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API route برای آپلود تصاویر
-app.post('/upload/image', uploadImage.single('image'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No image file uploaded');
+// آپلود فایل
+app.post('/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const fileData = {
+            type: req.file.mimetype,
+            path: `/uploads/${req.file.filename}`,
+            originalName: req.file.originalname
+        };
+
+        // ارسال به webhook
+        try {
+            await axios.post(WEBHOOK_URL, {
+                type: 'file',
+                data: fileData
+            });
+        } catch (error) {
+            console.error('Webhook error:', error);
+        }
+
+        res.json(fileData);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-    res.json({ imageUrl: `/uploads/${req.file.filename}` });
 });
 
-// API route برای آپلود فایل صوتی
-app.post('/upload/audio', uploadAudio.single('audio'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No audio file uploaded');
-    }
-    res.json({ audioUrl: `/uploads/${req.file.filename}` });
-});
-
-// دریافت URL فایل صوتی و ارسال آن به سایر کاربران
+// تنظیمات Socket.IO
 io.on('connection', (socket) => {
-    console.log('✅ A user connected');
+    console.log('Client connected');
 
-    // دریافت پیام متنی از کلاینت و ارسال به سایر کلاینت‌ها
-    socket.on('chatMessage', (data) => {
-        io.emit('chatMessage', { message: data.message });
+    socket.on('chatMessage', async (data) => {
+        console.log('Message received:', data);
+        
+        // ارسال به webhook
+        try {
+            await axios.post(WEBHOOK_URL, {
+                type: 'message',
+                data: data
+            });
+        } catch (error) {
+            console.error('Webhook error:', error);
+        }
+
+        // ارسال به همه کلاینت‌ها
+        io.emit('chatMessage', data);
     });
 
-    // دریافت URL تصویر و ارسال آن به سایر کلاینت‌ها
-    socket.on('imageUpload', (imageUrl) => {
-        io.emit('imageUpload', imageUrl);  // ارسال URL تصویر به همه کاربران
-    });
+    socket.on('fileMessage', async (data) => {
+        console.log('File message received:', data);
+        
+        // ارسال به webhook
+        try {
+            await axios.post(WEBHOOK_URL, {
+                type: 'file',
+                data: data
+            });
+        } catch (error) {
+            console.error('Webhook error:', error);
+        }
 
-    // دریافت URL فایل صوتی و ارسال آن به سایر کلاینت‌ها
-    socket.on('audioUpload', (audioUrl) => {
-        io.emit('audioUpload', audioUrl);  // ارسال URL صوتی به همه کاربران
+        io.emit('fileMessage', data);
     });
 
     socket.on('disconnect', () => {
-        console.log('❌ A user disconnected');
+        console.log('Client disconnected');
     });
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
