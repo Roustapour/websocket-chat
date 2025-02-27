@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessage(data, 'received');
     });
 
+    // دریافت پاسخ‌ها از n8n
+    socket.on('botResponse', (data) => {
+        console.log('Bot response received:', data);
+        appendMessage(data, 'received');
+    });
+
     // رویداد ارسال پیام
     messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -97,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mediaRecorder.start();
                 recordButton.textContent = '⏹ توقف ضبط';
                 recordButton.classList.add('recording');
+                document.querySelector('.recording-indicator').style.display = 'inline';
             })
             .catch(error => {
                 console.error('Error accessing microphone:', error);
@@ -110,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaRecorder.stop();
             recordButton.textContent = '🎤 شروع ضبط';
             recordButton.classList.remove('recording');
+            document.querySelector('.recording-indicator').style.display = 'none';
         }
     }
 
